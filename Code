@@ -1,0 +1,75 @@
+#!/bin/bash
+source /opt/vyatta/etc/functions/script-template
+
+T=0
+P=(0 0 0 0 0 0)
+C=(0 0 0 0 0 0)
+
+NXTHOP_PING="$(run sh configuration commands | match 3.6.172.181 | awk '{print$7}')"
+IP=(103.27.85.2 103.117.236.114 103.252.219.19 125.63.96.26 203.92.35.42 223.26.29.186)
+
+while [ 1 ]
+do
+
+if  ping -c 2 $NXTHOP_PING > /dev/null; then
+        if [ $T -eq 0 ]; then
+        echo Date:`date "+%D"` Time:`date "+%T"` " == LINK IS UP . NEXTHOP $NXTHOP_PING REACHABLE"
+        echo Date:`date "+%D"` Time:`date "+%T"` " == LINK IS UP . NEXTHOP $NXTHOP_PING REACHABLE" >> /home/infinity/.sdwan/logs/linktest.log
+        T=1
+        C=0
+        fi
+        
+a=0
+        while [ $a -lt 6 ]
+do
+        if ping -c 2 ${IP[a]} > /dev/null; then
+                if [ ${P[a]} -eq 0 ]; then
+                echo Date:`date "+%D"` Time:`date "+%T"` " == NETWORK IP ${IP[a]} IS PINGING . INTERNET REACHABLE"
+                echo Date:`date "+%D"` Time:`date "+%T"` " == NETWORK IP ${IP[a]} IS PINGING . INTERNET REACHABLE" >> /home/infinity/.sdwan/logs/linktest.log
+                P[a]=1
+                C[a]=0
+                fi
+        sleep 3
+
+        elif [ ${C[a]} -eq 0 ]; then
+                echo Date:`date "+%D"` Time:`date "+%T"` " ==  NETWORK IP ${IP[a]} IS NOT PINGING . INTERNET UNREACHABLE"
+                echo Date:`date "+%D"` Time:`date "+%T"` " ==  NETWORK IP ${IP[a]} IS NOT PINGING . INTERNET UNREACHABLE" >> /home/infinity/.sdwan/logs/linktest.log
+                C[a]=1
+                P[a]=0
+        sleep 3
+
+        fi
+a=`expr $a + 1`
+done
+
+elif [ $T -eq 1 ]; then
+echo Date:`date "+%D"` Time:`date "+%T"` " == LINK IS DOWN . NEXTHOP $NXTHOP_PING NOT REACHABLE"
+echo Date:`date "+%D"` Time:`date "+%T"` " == LINK IS DOWN . NEXTHOP $NXTHOP_PING NOT REACHABLE" >> /home/infinity/.sdwan/logs/linktest.log
+T=0
+
+a=0
+        while [ $a -lt 6 ]
+do
+        if ping -c 2 ${IP[a]} > /dev/null; then
+                if [ ${P[a]} -eq 0 ]; then
+                echo Date:`date "+%D"` Time:`date "+%T"` " == NETWORK IP ${IP[a]} IS PINGING . INTERNET REACHABLE"
+                echo Date:`date "+%D"` Time:`date "+%T"` " == NETWORK IP ${IP[a]} IS PINGING . INTERNET REACHABLE" >> /home/infinity/.sdwan/logs/linktest.log
+                P[a]=1
+                C[a]=0
+                fi
+        sleep 3
+
+        elif [ ${C[a]} -eq 0 ]; then
+                echo Date:`date "+%D"` Time:`date "+%T"` " ==  NETWORK IP ${IP[a]} IS NOT PINGING . INTERNET UNREACHABLE"
+                echo Date:`date "+%D"` Time:`date "+%T"` " ==  NETWORK IP ${IP[a]} IS NOT PINGING . INTERNET UNREACHABLE" >> /home/infinity/.sdwan/logs/linktest.log
+                C[a]=1
+                P[a]=0
+        sleep 3
+
+        fi
+a=`expr $a + 1`
+done
+fi
+sleep 3
+
+done
